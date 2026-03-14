@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Payment Verification Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Tesseract OCR (Fallback) -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
+<body>
+    <div class="background-elements">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <main class="dashboard-container">
+        <header class="dashboard-header glass-panel">
+            <div class="logo-area">
+                <i data-lucide="building-2" class="logo-icon"></i>
+                <div>
+                    <h1>BankVerify Pro</h1>
+                    <p>Real-time mock API payment verification</p>
+                </div>
+            </div>
+            <div class="user-profile">
+                <div class="avatar">
+                    <i data-lucide="user"></i>
+                </div>
+            </div>
+        </header>
+
+        <section class="main-content">
+            <div class="verification-card glass-panel">
+                <div class="card-header">
+                    <h2>Verify Capture</h2>
+                    <p>Upload a receipt or payment screenshot to simulate bank verification.</p>
+                </div>
+
+                <!-- Upload Area -->
+                <div class="upload-area" id="drop-zone">
+                    <input type="file" id="file-input" accept="image/*" hidden>
+                    <div class="upload-content" id="upload-content">
+                        <div class="upload-icon-wrapper">
+                            <i data-lucide="upload-cloud"></i>
+                        </div>
+                        <h3>Drag & drop your capture here</h3>
+                        <p>or <button class="text-link" id="browse-btn">browse files</button></p>
+                        <span class="file-hint">Supports: JPG, PNG, WEBP</span>
+                    </div>
+
+                    <div class="preview-content hidden" id="preview-content">
+                        <!-- OCR Loading Overlay -->
+                        <div class="ocr-loading hidden" id="ocr-loading">
+                            <div class="ocr-scanner-line"></div>
+                            <div class="spinner ocr-spinner"></div>
+                            <p>Extracting data with AI...</p>
+                        </div>
+                        
+                        <img id="image-preview" src="" alt="Payment Capture Preview">
+                        <button class="remove-btn" id="remove-btn" aria-label="Remove image">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="action-area">
+                    <button id="show-form-btn" class="secondary-btn" style="width: 100%; margin-bottom: 1rem;" disabled>
+                        <i data-lucide="edit-3"></i>
+                        Input Details Manually
+                    </button>
+                    <!-- Form overlay (hidden by default) -->
+                    <div class="api-form hidden" id="api-form">
+                        <h3>Payment Details</h3>
+                        <p class="form-instruction">Please extract these details from the capture and fill the fields below for the BDV Bank verification.</p>
+                        
+                        <div class="form-grid">
+                            <div class="input-group">
+                                <label for="cedulaPagador">Cédula Pagador</label>
+                                <input type="text" id="cedulaPagador" placeholder="Ej: V27037606" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="telefonoPagador">Teléfono Pagador</label>
+                                <input type="text" id="telefonoPagador" placeholder="Ej: 04127141363" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="telefonoDestino">Teléfono Destino</label>
+                                <input type="text" id="telefonoDestino" placeholder="Ej: 04127141363" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="bancoOrigen">Banco Origen</label>
+                                <input type="text" id="bancoOrigen" placeholder="Ej: 0102" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="referencia">Referencia</label>
+                                <input type="text" id="referencia" placeholder="Ej: 123112313" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="fechaPago">Fecha Pago</label>
+                                <input type="date" id="fechaPago" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="importe">Monto</label>
+                                <input type="text" id="importe" placeholder="Ej: 120.00" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="verify-btn" class="primary-btn glow-effect" disabled>
+                        <i data-lucide="shield-check"></i>
+                        Verify with BDV API
+                    </button>
+                </div>
+            </div>
+
+            <!-- Verification Modal/Results Area inside the grid -->
+            <div class="results-card glass-panel" id="results-card">
+                <div class="empty-state" id="empty-state">
+                    <div class="icon-circle">
+                        <i data-lucide="activity"></i>
+                    </div>
+                    <h3>Waiting for capture</h3>
+                    <p>Submit a capture to begin the Bank API verification process.</p>
+                </div>
+
+                <div class="loading-state hidden" id="loading-state">
+                    <div class="spinner"></div>
+                    <h3>Connecting to Bank API...</h3>
+                    <p>Verifying reference, amount, and recipient...</p>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+                    <ul class="loading-steps">
+                        <li class="active"><i data-lucide="check-circle-2"></i> Analyzing image</li>
+                        <li class="pending" id="step-2"><i data-lucide="circle"></i> Establishing secure connection</li>
+                        <li class="pending" id="step-3"><i data-lucide="circle"></i> Validating transaction hash</li>
+                    </ul>
+                </div>
+
+                <div class="success-state hidden" id="success-state">
+                    <div class="status-icon success">
+                        <i data-lucide="check-circle-2"></i>
+                    </div>
+                    <h3>Payment Verified</h3>
+                    <p class="status-badge success">Approved</p>
+                    
+                    <div class="receipt-details">
+                        <div class="detail-row">
+                            <span class="label">Reference:</span>
+                            <span class="value hash-font" id="success-ref">---</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Amount Detected:</span>
+                            <span class="value highlight">$1,250.00</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Date:</span>
+                            <span class="value" id="success-date">---</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Bank Match:</span>
+                            <span class="value green">100% Valid</span>
+                        </div>
+                    </div>
+                    
+                    <p id="duplicate-note" class="hidden" style="font-size: 0.85rem; color: #94a3b8; margin-top: 15px; text-align: center; max-width: 90%; margin-inline: auto; line-height: 1.4;"></p>
+                    
+                    <button class="secondary-btn" id="reset-btn-success" style="margin-top: 15px;">Verify Another</button>
+                </div>
+
+                <div class="error-state hidden" id="error-state">
+                    <div class="status-icon error">
+                        <i data-lucide="x-circle"></i>
+                    </div>
+                    <h3>Verification Failed</h3>
+                    <p class="status-badge error">Rejected</p>
+                    
+                    <div class="error-details">
+                        <p id="error-message">The payment reference was not found in the bank's system. The transaction might be pending or fraudulent.</p>
+                    </div>
+                    
+                    <div class="receipt-details opacity-70">
+                         <div class="detail-row">
+                            <span class="label">Reference:</span>
+                            <span class="value hash-font" id="error-ref">---</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Scanned Confidence:</span>
+                            <span class="value orange">LOW</span>
+                        </div>
+                    </div>
+                    <button class="secondary-btn" id="reset-btn-error">Try Again</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
