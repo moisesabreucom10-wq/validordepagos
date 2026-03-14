@@ -88,7 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             try {
                 // Send Base64 image to our Backend Proxy which uses Gemini 2.5 Flash
-                const response = await fetch('http://localhost:3000/api/extract', {
+                // Path relative for Cloudflare deployment
+                const response = await fetch('/api/extract', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ imageBase64: e.target.result })
@@ -361,7 +362,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Send request to our Node.js Proxy Server
-            const response = await fetch('http://localhost:3000/api/verify', {
+            // Path relative for Cloudflare deployment
+            const response = await fetch('/api/verify', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
